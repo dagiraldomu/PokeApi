@@ -62,7 +62,7 @@ async def fetch_all_berries():
         for growth_time in growth_times:
             sum_squared_diff += (growth_time - mean_growth_time) ** 2
 
-        variance_growth_time = sum_squared_diff / (count - 1) if count > 1 else 0.0
+        variance_growth_time = sum_squared_diff / (count - 1) if count > 1 else 0.0 # TODO Change to numpy?
 
         # Calculate median (needs sorting, unavoidable but only done once)
         growth_times.sort()
