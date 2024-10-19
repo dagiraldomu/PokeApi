@@ -1,18 +1,11 @@
 from collections import defaultdict
 import math
 import httpx
-import os
-from dotenv import load_dotenv
+from app.settings.config import settings
 
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Fetch API URL from environment variables (from .env file)
-API_BASE_URL = os.getenv("POKEAPI_BERRY_URL", "https://pokeapi.co/api/v2/berry/")
 
 async def fetch_all_berries():
-    url = API_BASE_URL
+    url = settings.poke_api_berry_url
     # all_berries = []
     berries_names = []
     growth_times = []
