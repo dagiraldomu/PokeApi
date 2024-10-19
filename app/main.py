@@ -1,15 +1,15 @@
+import os
 from fastapi import FastAPI
 from app.routers import berries
-import os
 from fastapi.staticfiles import StaticFiles
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.inmemory import InMemoryBackend
 from contextlib import asynccontextmanager
+from app.settings.cache import init_cache
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize the cache with in-memory backend
-    FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
+    await init_cache()
     yield
 
 app = FastAPI(title="PokeApi", description="Berries statistics", lifespan=lifespan)

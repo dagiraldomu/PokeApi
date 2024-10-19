@@ -27,3 +27,4 @@ pytest-debug.log
 # FastAPI static files
 /static/
 *.html
+/app/static/
