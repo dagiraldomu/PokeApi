@@ -1,0 +1,30 @@
+# Virtual environments
+.env/
+.venv/
+env/
+
+# Testing and Coverage reports
+coverage.xml
+.coverage
+.cache
+nosetests.xml
+coverage/
+*.cover
+*.py,cover
+
+# PyCharm
+.idea/
+*.iml
+__pycache__/
+
+# VSCode
+.vscode/
+
+# Pytest
+.pytest_cache/
+pytest-debug.log
+
+# FastAPI static files
+/static/
+*.html
+/app/static/
