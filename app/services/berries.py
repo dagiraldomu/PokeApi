@@ -1,8 +1,12 @@
 from collections import defaultdict
 import math
 import httpx
+from fastapi import Depends
+
+from app.services.histogram import create_histogram
 from app.settings.config import settings
 
+from app.settings.cache import get_cache_backend
 
 async def fetch_all_berries():
     url = settings.poke_api_berry_url
@@ -46,6 +50,8 @@ async def fetch_all_berries():
 
             # Get the next page URL
             url = data['next']
+        # Create Histogram
+        create_histogram(growth_times)
 
         # Calculate mean
         count = len(growth_times)
@@ -74,3 +80,14 @@ async def fetch_all_berries():
             "mean_growth_time": f'{round(mean_growth_time, 2)} hours' ,
             "frequency_growth_time": dict(frequency_growth_time)
         }
+
+async def get_berries_from_cache_or_fetch(cache_backend=Depends(get_cache_backend)):
+    # Look for cached response
+    cached_value = await cache_backend.get('all_berry_records')
+    if cached_value:
+        return cached_value
+    else:
+        # Fetch all berry records asynchronously
+        all_berry_records = await fetch_all_berries()
+        await cache_backend.set('all_berry_records', all_berry_records, expire=settings.cache_expire_time)
+        return all_berry_records
