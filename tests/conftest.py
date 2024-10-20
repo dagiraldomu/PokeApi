@@ -17,9 +17,3 @@ def mock_get_berries_from_cache_or_fetch():
 
 
 mock.patch("app.services.berries.get_berries_from_cache_or_fetch", mock_get_berries_from_cache_or_fetch).start()
-
-@pytest.fixture(scope="module")
-async def client():
-    from app.main import app # need to load app module after mock. otherwise, it would fail
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        yield client
