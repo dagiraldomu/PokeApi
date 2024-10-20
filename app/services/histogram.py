@@ -1,22 +1,25 @@
+import os
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Ensure the 'static' directory exists
+if not os.path.exists("static"):
+    os.makedirs("static")
 
 def create_histogram(growth_times):
     plt.figure(figsize=(10, 6))
     plt.hist(growth_times, bins=np.arange(min(growth_times), max(growth_times) + 2), edgecolor='black')
+    # Plot data labels in x-axis
+    plt.xticks(growth_times, [str(i) for i in growth_times])
     plt.title('Histogram of Berry Growth Times')
     plt.xlabel('Growth Time')
     plt.ylabel('Frequency')
 
     # Save the image to a file
-    plt.savefig('../static/histogram.png')
+    plt.savefig('static/histogram.png')
     plt.close()
 
-# # Example usage with growth times data
-# growth_times = [3, 5, 3, 2]
-# create_histogram(growth_times)
 
-# Define the HTML content
 html_content = """
 <!DOCTYPE html>
 <html>
