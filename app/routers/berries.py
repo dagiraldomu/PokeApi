@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
+from app.schemas.berries import BerryGrowthStatistics
 from app.services.berries import get_berries_from_cache_or_fetch
 from app.services.histogram import html_content
-from app.settings.config import settings
 from fastapi.responses import HTMLResponse
 # Set up FastAPI router
 router = APIRouter()
 
 
-@router.get("/allBerryStats")
+@router.get("/allBerryStats", response_model=BerryGrowthStatistics)
 async def fetch_berries(data=Depends(get_berries_from_cache_or_fetch)):
     """
     Fetch all berries growth statistics from cache or external source(PokeApi endpoint).
