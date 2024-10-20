@@ -24,3 +24,13 @@ async def test_fetch_berry_stats():
     }
 
     assert response.json() == expected_data
+
+@pytest.mark.asyncio
+async def test_histogram_berry_stats():
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/berryStatsHistogram")
+
+    assert response.status_code == 200
+    # Check if the 'Content-Type' header is 'text/hml'
+    assert response.headers["content-type"] == "text/html; charset=utf-8"
