@@ -1,7 +1,7 @@
 from collections import defaultdict
 import math
 import httpx
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 
 from app.services.histogram import create_histogram
 from app.settings.config import settings
@@ -23,28 +23,32 @@ async def fetch_all_berries():
 
     async with httpx.AsyncClient() as client:
         while url:
-            response = await client.get(url)
-            data = response.json()
+            try:
+                response = await client.get(url)
+                data = response.json()
 
-            results = data["results"]
+                results = data["results"]
 
-            for result in results:
-                response_berry_data = await client.get(result['url'])
-                berry = response_berry_data.json()
+                for result in results:
+                    response_berry_data = await client.get(result['url'])
+                    berry = response_berry_data.json()
 
-                name = berry['name']
-                growth_time = berry['growth_time']
+                    name = berry['name']
+                    growth_time = berry['growth_time']
 
-                berries_names.append(f'{name.title()} Berry')
-                growth_times.append(growth_time)
+                    berries_names.append(f'{name.title()} Berry')
+                    growth_times.append(growth_time)
 
-                # Update min, max, sum
-                min_growth_time = min(min_growth_time, growth_time)
-                max_growth_time = max(max_growth_time, growth_time)
-                sum_growth_time += growth_time
+                    # Update min, max, sum
+                    min_growth_time = min(min_growth_time, growth_time)
+                    max_growth_time = max(max_growth_time, growth_time)
+                    sum_growth_time += growth_time
 
-                # Update frequency
-                frequency_growth_time[growth_time] += 1
+                    # Update frequency
+                    frequency_growth_time[growth_time] += 1
+
+            except httpx.ConnectError as error:
+                raise HTTPException(status_code=404, detail="Berries data endpoint unreachable")
 
 
 
