@@ -7,19 +7,18 @@ from app.services.histogram import create_histogram
 from app.settings.config import settings
 
 from app.settings.cache import get_cache_backend
+import numpy as np
+
+import asyncio
+
+async def fetch_berry_data(client, url):
+    response = await client.get(url)
+    berry = response.json()
+    return {'name': berry['name'], 'growth_time': berry['growth_time']}
+
 
 async def fetch_all_berries():
     url = settings.poke_api_berry_url
-    # all_berries = []
-    berries_names = []
-    growth_times = []
-
-    # Initialize variables for the statistics
-    min_growth_time = math.inf
-    max_growth_time = -math.inf
-    sum_growth_time = 0
-    sum_squared_diff = 0  # For calculating variance
-    frequency_growth_time = defaultdict(int)
 
     async with httpx.AsyncClient() as client:
         while url:
@@ -29,51 +28,39 @@ async def fetch_all_berries():
 
                 results = data["results"]
 
-                for result in results:
-                    response_berry_data = await client.get(result['url'])
-                    berry = response_berry_data.json()
+                # Create tasks for all URLs
+                tasks = [fetch_berry_data(client, result['url']) for result in results]
 
-                    name = berry['name']
-                    growth_time = berry['growth_time']
-
-                    berries_names.append(f'{name.title()} Berry')
-                    growth_times.append(growth_time)
-
-                    # Update min, max, sum
-                    min_growth_time = min(min_growth_time, growth_time)
-                    max_growth_time = max(max_growth_time, growth_time)
-                    sum_growth_time += growth_time
-
-                    # Update frequency
-                    frequency_growth_time[growth_time] += 1
+                # Run all tasks concurrently
+                berries = await asyncio.gather(*tasks)
 
             except httpx.ConnectError as error:
                 raise HTTPException(status_code=404, detail="Berries data endpoint unreachable")
-
-
-
             # Get the next page URL
             url = data['next']
+
+        # Extract 'name' and 'growth_time' into two separate lists
+        berries_names, growth_times = zip(*[(f'{berry["name"].title()} Berry', berry['growth_time']) for berry in berries])
+        # Convert zip result to lists (zip returns tuples by default)
+        berries_names = list(berries_names)
+        growth_times = list(growth_times)
+
         # Create Histogram
         create_histogram(growth_times)
 
-        # Calculate mean
-        count = len(growth_times)
-        mean_growth_time = sum_growth_time / count if count > 0 else 0
+        # Convert growth_times to a numpy array
+        growth_times_np = np.array(growth_times)
 
-        # Calculate variance
-        for growth_time in growth_times:
-            sum_squared_diff += (growth_time - mean_growth_time) ** 2
+        # Calculate the statistics
+        min_growth_time = np.min(growth_times_np)
+        median_growth_time = np.median(growth_times_np)
+        max_growth_time = np.max(growth_times_np)
+        variance_growth_time = np.var(growth_times_np)  # Variance
+        mean_growth_time = np.mean(growth_times_np)
 
-        variance_growth_time = sum_squared_diff / (count - 1) if count > 1 else 0.0 # TODO Change to numpy?
-
-        # Calculate median (needs sorting, unavoidable but only done once)
-        growth_times.sort()
-        mid = count // 2
-        if count % 2 == 0:
-            median_growth_time = (growth_times[mid - 1] + growth_times[mid]) / 2
-        else:
-            median_growth_time = growth_times[mid]
+        # Calculate the frequency of each growth time
+        unique, counts = np.unique(growth_times_np, return_counts=True)
+        frequency_growth_time = dict(zip(unique, counts))
 
         return {
             "berries_names": berries_names,
@@ -81,8 +68,8 @@ async def fetch_all_berries():
             "median_growth_time": f'{round(median_growth_time, 2)} hours',
             "max_growth_time": f'{max_growth_time} hours',
             "variance_growth_time": f'{round(variance_growth_time, 2)} hours',
-            "mean_growth_time": f'{round(mean_growth_time, 2)} hours' ,
-            "frequency_growth_time": dict(frequency_growth_time)
+            "mean_growth_time": f'{round(mean_growth_time, 2)} hours',
+            "frequency_growth_time": frequency_growth_time
         }
 
 async def get_berries_from_cache_or_fetch(cache_backend=Depends(get_cache_backend)):
